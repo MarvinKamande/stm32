@@ -64,6 +64,7 @@ float angle_changes[] = {
 		0.1 * (2 * M_PI / SAMPLE_FREQ)
 };
 
+uint32_t callback_cnt = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -92,7 +93,23 @@ int _write(int fd, char* ptr, int len) {
   return -1;
 }
 
+//Callback triggers after PWM pulse period is completed
+inline void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
+	if (htim->Instance == TIM4) {
 
+		for ( int i = 0; i < (sizeof(angles) / sizeof(angles[0])); i++) {
+
+			 	angles[i] += angle_changes[i];
+
+			 	if (angles[i] >= 2 * M_PI) angles[i] -= (2 * M_PI);
+
+			 	__HAL_TIM_SET_COMPARE(&htim4, pwm_channels[i], SAMPLE_MIDPT - (SAMPLE_MIDPT * sin(angles[i])));
+
+		}
+
+		++callback_cnt;
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -131,7 +148,7 @@ int main(void)
   printf("\n\n\n\n\r------------\n\rStarting PWM\n\r");
 
       printf("Starting timer channel\n\r");
-      HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
+      HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_1);
       HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
       HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
       HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
@@ -143,7 +160,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 
 
-      uint32_t now = 0, next_tick = 1000, loop_count = 0, next_sample = SAMPLE_DELAY;
+      uint32_t now = 0, next_tick = 1000, loop_count = 0;
 
   while (1)
   {
@@ -152,26 +169,12 @@ int main(void)
 
 	 	  if (now >= next_tick) {
 
-	 	  	  printf("Tick %lu (loop = %lu)\n\r", now/1000, loop_count);
+	 	  	  printf("Tick %lu (loop = %lu , cb count = %lu)\n\r", now/1000, loop_count, callback_cnt);
 
 	 	  	  loop_count = 0;
 	 	  	  next_tick = now + 1000;
 	 	  	  	  }
 
-
-	 	  if (now >= next_sample) {
-
-	 		  for ( int i = 0; i < (sizeof(angles) / sizeof(angles[0])); i++) {
-
-	 			  angles[i] += angle_changes[i];
-
-	 			  if (angles[i] >= 2 * M_PI) angles[i] -= (2 * M_PI);
-
-	 			 __HAL_TIM_SET_COMPARE(&htim4, pwm_channels[i], SAMPLE_MIDPT - (SAMPLE_MIDPT * sin(angles[i])));
-	 		  }
-
-	 		  next_sample = now + SAMPLE_DELAY;
-	 	  }
 
 	 	  ++loop_count;
 
