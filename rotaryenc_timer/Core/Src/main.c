@@ -31,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define PULSES_PER_REVOLUTION 40
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -47,6 +47,8 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 volatile int16_t r = 0;
 volatile uint8_t r_change = 0;
+uint16_t cnt1 = 0, cnt2 = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -135,15 +137,46 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
+  cnt1 = __HAL_TIM_GET_COUNTER(&htim3);
   uint32_t next_tick = 1000, now = 0, loop_cnt = 0;
+  uint16_t diff = 0, dir = 0;
+  float speed = 0.0;
+  char msg[60];
 
   while (1)
   {
 	  now = HAL_GetTick();
 	  if (now >= next_tick) {
-		  printf("Tick %lu (loop = %lu rot = %lu)\n\r", now/1000, loop_cnt, TIM3->CNT);
+		  cnt2 = __HAL_TIM_GET_COUNTER(&htim3);
+		  if (__HAL_TIM_IS_TIM_COUNTING_DOWN(&htim3)) {
+			  if (cnt2 <= cnt1)
+				  diff = cnt1 - cnt2;
+			  else
+				  diff = (65535 - cnt1) + cnt2; //In case of counter underflow
+		  } else {
+			  if (cnt2 >= cnt1)
+				  diff = cnt2 - cnt1;
+			  else
+				  diff = (65535 - cnt1) + cnt2; //In case of counter overflow
+		  }
+
+		  sprintf(msg, "Difference: %d  ", diff);
+		  printf("%s", msg);
+
+		  speed = diff / PULSES_PER_REVOLUTION; //Revolutions per second
+		  sprintf(msg, "Speed: %f  ", speed);
+		  printf("%s", msg);
+
+		  dir = __HAL_TIM_IS_TIM_COUNTING_DOWN(&htim3);
+		  sprintf(msg, "Direction: %d", dir);
+		  printf("%s\n\r", msg);
+
+		  cnt1 = __HAL_TIM_GET_COUNTER(&htim3);
+
+		  printf("\n\rTick %lu (loop = %lu rot = %lu)\n\r", now/1000, loop_cnt, TIM3->CNT);
 		  loop_cnt = 0;
 		  next_tick = now + 1000;
+
 	  }
 
 	  if (r_change) {
@@ -232,7 +265,7 @@ static void MX_TIM3_Init(void)
   sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
+  sConfig.IC2Filter = 4;
   if (HAL_TIM_Encoder_Init(&htim3, &sConfig) != HAL_OK)
   {
     Error_Handler();
