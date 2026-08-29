@@ -57,7 +57,7 @@ static void MX_USART2_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-// Send printf to uart1
+// Send printf to uart2
 int _write(int fd, char* ptr, int len) {
   HAL_StatusTypeDef hstatus;
 
