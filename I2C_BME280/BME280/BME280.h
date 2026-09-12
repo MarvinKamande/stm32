@@ -32,7 +32,17 @@
 #define BME280_MODE_FORCED 0x02
 #define BME280_IIR_TSB 0x24
 
+typedef struct {
+	int32_t press;
+	int32_t temp;
+	int16_t hum;
+} BME280_TypeDef;
 
+typedef struct {
+	float Temp;
+	float Press;
+	float Hum;
+} BME280_Actual;
 
 typedef struct {
 	int8_t mode;

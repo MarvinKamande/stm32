@@ -28,11 +28,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-typedef struct {
-	int32_t press;
-	int32_t temp;
-	int16_t hum;
-} BME280_TypeDef;
+
 
 /* USER CODE END PTD */
 
@@ -52,8 +48,11 @@ I2C_HandleTypeDef hi2c1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-BME280_TypeDef read_data;
+BME280_TypeDef raw_data;
+BME280_Actual Results;
 int8_t status;
+
+//calibration values from BME280 NVM
 int16_t Dig_T[3] = {0};
 int16_t Dig_P[9] = {0};
 int16_t Dig_H[6] = {0};
@@ -90,22 +89,7 @@ inline uint32_t HAL_GetTick(void) {
 	return uwTick;
 }
 
-HAL_StatusTypeDef Read_From_BME280 () {
-	HAL_StatusTypeDef returnstatus;
-	uint8_t buf[8] = {0};
 
-	returnstatus = HAL_I2C_Mem_Read(&hi2c1, DEVICE_ADDRESS << 1, PRESS_REG_ADDRESS, I2C_MEMADD_SIZE_8BIT, (uint8_t*)&buf, 8, HAL_MAX_DELAY);
-	if (returnstatus != HAL_OK) {
-		return returnstatus;
-	}
-
-	read_data.press = (buf[0] << 12) + (buf[1] << 4) + (buf[2] >> 4);
-	read_data.temp = (buf[3] << 12) + (buf[4] << 4) + (buf[5] >> 4);
-	read_data.hum = (buf[6] << 8) + buf[7];
-
-	return returnstatus;
-
-}
 /* USER CODE END 0 */
 
 /**
@@ -166,9 +150,8 @@ int main(void)
 	  Error_Handler();
   }
 
-  if (Read_From_BME280() != HAL_OK) {
-	  Error_Handler();
-  }
+  BME280_Measure(&hi2c1, &raw_data, Dig_T, Dig_P, Dig_H, &Results);
+
 
   /* USER CODE END 2 */
 
