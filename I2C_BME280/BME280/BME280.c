@@ -136,7 +136,7 @@ int32_t BME280_Compensate_T(int32_t adc_T, int32_t* t_fine, int16_t* DT) {
 	var1 = ((((adc_T>>3)-((int32_t)(*DT)<<1))) * ((int32_t)(*(DT+1)))) >> 11;
 	var2 = (((((adc_T>>4) - ((int32_t)(*DT))) * ((adc_T>>4) - ((int32_t)(*DT))))>> 12) *((int32_t)(*(DT+2)))) >> 14;
 	*t_fine = var1 + var2;
-	T = ((*t_fine) * 8 + 128)>>8;
+	T = ((*t_fine) * 5 + 128)>>8;
 	return T;
 }
 
